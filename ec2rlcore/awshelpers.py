@@ -20,6 +20,7 @@ Functions:
     get_instance_id: Gets the instance ID of the currently running instance
     get_volume_ids: Creates a list of ebs volumes attached to the instance
     get_volume_mappings: Creates a dict of unix block device : ebs volume id
+    put_diagnostic_ssm_inventory: Puts the results of diagnostic modules in the instance SSM inventory
 
 Classes:
     None
@@ -30,9 +31,11 @@ Exceptions:
     AWSHelperMetadataHTTPError: raised when an HTTP error occurs while attempting to interact with the metadata service
     AWSHelperRequestsException: raised when an ambiguous error occurs while attempting to interact with the metadata
     service
-    NoCredsError: raised no AWS credentials were found
+    AWSHelperNoCredsError: raised no AWS credentials were found
+    AWSHelperInvalidInstanceID: raised when instance ID is not found in SSM managed instances
 """
 
+import datetime
 import requests
 import botocore
 import boto3
@@ -133,6 +136,40 @@ def get_volume_mappings():
 
     return volume_mappings
 
+def put_diagnostic_ssm_inventory(moduleresults):
+    """
+    Puts the results of diagnostic modules into the ssm custom inventory
+
+    Params:
+        moduleresults (dict): Results of modules run, key of module name value of result
+
+    Returns:
+        None
+    """
+    try:
+        client = boto3.client("ssm", region_name=get_instance_region())
+
+        response = client.put_inventory(
+            InstanceId=get_instance_id(),
+            Items=[
+                {
+                    "TypeName": "Custom:ec2rlDiagnostics",
+                    "SchemaVersion": "1.0",
+                    "CaptureTime":datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
+                    'Content': [
+                    moduleresults
+                    ]
+                }
+            ]
+        )
+
+        del client
+    except botocore.exceptions.NoCredentialsError:
+        raise AWSHelperNoCredsError
+
+    except botocore.errorfactory.InvalidInstanceId:
+        raise AWSHelperInvalidInstanceId
+
 
 class AWSHelperError(Exception):
     """Base class for exceptions in this module."""
@@ -169,3 +206,10 @@ class AWSHelperNoCredsError(AWSHelperError):
     def __init__(self):
         message = "No AWS Credentials configured. Please configure these and try again"
         super(AWSHelperNoCredsError, self).__init__(message)
+
+class AWSHelperInvalidInstanceId(AWSHelperError):
+    """No AWS credentials were found."""
+
+    def __init__(self):
+        message = "Invalid Instance ID specified. Does it exist and have an SSM compliant IAM role?"
+        super(AWSHelperInvalidInstanceId, self).__init__(message)
