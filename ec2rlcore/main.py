@@ -1025,6 +1025,11 @@ class Main(object):
                 elif module_obj.run_status == "UNKNOWN":
                     diagnose_unknowns += 1
 
+            # Send results to Simple Systems Manager as well if ssminventory = True
+            if "ssminventory":
+                moduleresults = {i.name:i.run_status for i in self.modules.class_map["diagnose"]}
+                ec2rlcore.awshelpers.put_diagnostic_ssm_inventory(moduleresults)
+
             # Sort the list by the run_status string so that warnings, successes, etc are grouped.
             for module_obj in sorted([module_obj for module_obj in self.modules.class_map["diagnose"]],
                                      key=lambda mod: mod.run_status):

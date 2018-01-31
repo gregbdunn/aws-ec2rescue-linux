@@ -61,8 +61,8 @@ run_help:  !!str |+
   run:
       SYNOPSIS:
           ec2rl run [--only-modules=MODULEa ... MODULEx] [--only-domains=DOMAINa ... DOMAINx]
-          ec2rl run [--abc=param] [--no=abc] [--perfimpact=true]
-          ec2rl run [--concurrency=N] [--backup=ami | allvolumes]
+          ec2rl run [--abc=param] [--no=abc] [--perfimpact=true] [--remediate]
+          ec2rl run [--concurrency=N] [--backup=ami | allvolumes] [--ssminventory]
 
       DESCRIPTION:
           The run command executes any ec2rl modules specified,
@@ -90,6 +90,8 @@ run_help:  !!str |+
                                   if valid permissions are available. Select one
                                   of ami or allvolumes
               --remediate - enables remediation for modules that support it
+              --ssminventory - enables outputting diagnostic results to ssm inventory
+                                  on instances managed by EC2 Simple Systems Manager
 
           Key/Value Parameters:
               --abc=xyz   - pass variable "abc" to modules, set to "xyz"
