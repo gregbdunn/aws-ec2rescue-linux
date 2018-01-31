@@ -147,18 +147,22 @@ def put_diagnostic_ssm_inventory(moduleresults):
         None
     """
     try:
+        inventory_content = []
+
+        for key in moduleresults:
+            inventory_item = {"Diagnostic":key, "Result":moduleresults[key]}
+            inventory_content.append(inventory_item)
+
         client = boto3.client("ssm", region_name=get_instance_region())
 
         response = client.put_inventory(
             InstanceId=get_instance_id(),
             Items=[
                 {
-                    "TypeName": "Custom:ec2rlDiagnostics",
+                    "TypeName": "Custom:DiagnosticResults",
                     "SchemaVersion": "1.0",
                     "CaptureTime":datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
-                    'Content': [
-                    moduleresults
-                    ]
+                    'Content': inventory_content
                 }
             ]
         )
@@ -167,8 +171,11 @@ def put_diagnostic_ssm_inventory(moduleresults):
     except botocore.exceptions.NoCredentialsError:
         raise AWSHelperNoCredsError
 
-    except botocore.errorfactory.InvalidInstanceId:
-        raise AWSHelperInvalidInstanceId
+    except botocore.exceptions.ClientError as ex:
+        if ex.response['Error']['Code'] == 'InvalidInstanceId.NotFound':
+            raise AWSHelperInvalidInstanceId
+        else:
+            raise ex
 
 
 class AWSHelperError(Exception):
