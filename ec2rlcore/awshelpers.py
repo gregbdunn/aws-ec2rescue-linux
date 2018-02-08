@@ -168,6 +168,7 @@ def put_diagnostic_ssm_inventory(moduleresults):
         )
 
         del client
+
     except botocore.exceptions.NoCredentialsError:
         raise AWSHelperNoCredsError
 
@@ -176,6 +177,8 @@ def put_diagnostic_ssm_inventory(moduleresults):
             raise AWSHelperInvalidInstanceId
         else:
             raise ex
+
+    return True
 
 
 class AWSHelperError(Exception):

@@ -86,6 +86,21 @@ class TestAwshelpers(unittest.TestCase):
 
         self.assertEqual(resp, "i-deadbeef")
 
+    @mock.patch("ec2rlcore.awshelpers.boto3.client", side_effect=botocore.exceptions.NoCredentialsError())
+    @responses.activate
+    def test_awshelpers_no_creds_put_ssm_inventory(self, mock_client):
+        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
+                      body="us-east-1a", status=200)
+        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
+                      status=200)
+
+        results = {"diag":"result"}
+
+        with self.assertRaises(ec2rlcore.awshelpers.AWSHelperNoCredsError):
+            ec2rlcore.awshelpers.put_diagnostic_ssm_inventory(results)
+
+        self.assertTrue(mock_client.called)
+
     @mock.patch("ec2rlcore.awshelpers.requests.get", side_effect=requests.exceptions.Timeout())
     def test_awshelpers_get_instance_region_timeout(self, mock_get):
         """Test that timeout exception raises as expected."""
