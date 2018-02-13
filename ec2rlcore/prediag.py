@@ -57,7 +57,7 @@ def get_distro():
     Return the running Linux distribution.
 
     Returns:
-        distro (string): the detected Linux distribution
+        distro (str): the detected Linux distribution
     """
 
     distro = "unknown"
@@ -70,8 +70,10 @@ def get_distro():
         with open("/etc/system-release", "r") as fp:
             # This file is a single line
             distro_str = fp.readline()
-            if re.match(alami_regex, distro_str) or re.match(alami2_regex, distro_str):
+            if re.match(alami_regex, distro_str):
                 distro = "alami"
+            elif re.match(alami2_regex, distro_str):
+                distro = "alami2"
             elif re.match(rhel_regex, distro_str) or \
                     re.match(r"^CentOS Linux release (\d)\.(\d)\.(\d{4})", distro_str):
                 distro = "rhel"
@@ -444,7 +446,7 @@ def get_config_dict(module_name):
     REMEDIATE: controls whether remediation is to be attempted. The default is to only perform detection.
     SUDO: whether the module is being executed as root/with sudo privileges.
     DISTRO: the detected distribution of Linux running on the system.
-    NOTANINSTANCE: True if running on anything but an EC2 instance.
+    NOT_AN_INSTANCE: True if running on anything but an EC2 instance.
 
     Parameters:
         module_name (str): name of the module requesting the configuration dict.
